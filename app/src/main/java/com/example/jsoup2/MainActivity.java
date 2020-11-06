@@ -1,13 +1,18 @@
 package com.example.jsoup2;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
+import android.icu.text.StringPrepParseException;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -34,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     Bitmap bitmap;
     String UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36";
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,30 +52,23 @@ public class MainActivity extends AppCompatActivity {
         et.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                Log.d("before changed" , "before");
 
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
+            public void onTextChanged(CharSequence s, int start, int before, int count){
+                Log.d("on changed" , "on changed");
             }
 
             @Override
             public void afterTextChanged(Editable no) {
-                try {
 
-
-                    if (no.length() <=5 ) {
-                        Toast.makeText(MainActivity.this, "please enter valid url", Toast.LENGTH_SHORT).show();
-
-                    } else {
-                        url = et.getText().toString();
-                        new FetchWebsiteData().execute();
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                Log.d("after changed" , "after");
+                url = et.getText().toString();
+                new FetchWebsiteData().execute();
             }
+
         });
 
 
@@ -91,16 +90,25 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
+            if (URLUtil.isValidUrl(url)) {
 
-            super.onPreExecute();
-            mProgressDialog = new ProgressDialog(MainActivity.this);
-            mProgressDialog.setMessage("Loading...");
-            mProgressDialog.setIndeterminate(false);
-            mProgressDialog.show();
+                try {
+                    super.onPreExecute();
+                    mProgressDialog = new ProgressDialog(MainActivity.this);
+                    mProgressDialog.setMessage("Loading...");
+                    mProgressDialog.setIndeterminate(false);
+                    mProgressDialog.show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }else{
+                Log.d("OnPreExecute" , "enter valid url");
+            }
         }
 
         @Override
         protected Void doInBackground(Void... params) {
+            if (URLUtil.isValidUrl(url)){
             try {
                 // Connect to website
                 Document document = Jsoup.connect(url).userAgent(UserAgent).get();
@@ -118,15 +126,24 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            }else {}
             return null;
         }
 
+
+
         @Override
         protected void onPostExecute(Void result) {
+            try {
+
+
             t1.setText(websiteTitle);
             //t2.setText(websiteDescription);
             Picasso.with(getApplicationContext()).load(imgurl).into(img);
             mProgressDialog.dismiss();
+        }catch (Exception e){
+                e.printStackTrace();
+            }
         }
 
     }
